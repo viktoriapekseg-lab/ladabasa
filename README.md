@@ -1,12 +1,11 @@
 
-# Ládanyilvántartó – Supabase (közös adatbázis) – Mobil fixekkel
+# Ládanyilvántartó – Supabase (közös adatbázis) – Mobil carousel navigációval
 
-## Újdonságok (mobil)
-- Reszponzív rácsok: `grid-cols-1 md:grid-cols-*`
-- Gombok és inputok nagyobb padding, 16px font-size (iOS zoom elkerülése)
-- Táblák oszlopainak elrejtése mobilon (`hidden sm:table-cell`)
-- Fejléc mobilon törik sorba, gombok egymás alatt
-- Külső padding mobilon kisebb
+## Újdonságok
+- Mobilon **vízszintes carousel/scroll-snap** a fő nézetekhez (Mozgások / Egyenlegek / Partnerek / Beállítások).
+- Asztali nézetben marad a **füles (tabs)** navigáció érzés (gombokkal), a tartalom a kiválasztott lap szerint jelenik meg.
+- Alsó pager (pontok) és bal/jobb léptető nyilak mobilon.
+- Megmaradtak a korábbi mobilos finomítások.
 
 ## Telepítés
 1) Supabase → futtasd a `schema.sql`-t (ha még nem tetted).

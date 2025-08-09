@@ -18,3 +18,8 @@ th,td{padding:8px 10px;border-bottom:1px solid #eee;text-align:left}
 .dialog-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3)}
 .dialog-content{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);width:min(92vw,560px);padding:16px}
 input, select, textarea, button { font-size: 16px; }
+
+/* Carousel styles */
+.snap-x{ scroll-snap-type: x mandatory; }
+.snap-center{ scroll-snap-align: center; }
+.carousel-panel{ inline-size: 100%; block-size: auto; scroll-snap-align: center; }
