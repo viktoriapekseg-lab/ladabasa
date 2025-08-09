@@ -5,7 +5,7 @@ type UserRole = 'admin' | 'driver';
 type User = { name: string; role: UserRole };
 const USERS_BY_PIN: Record<string, User> = {
   '0717': { name: 'Admin', role: 'admin' },
-  '111111': { name: 'Ákos', role: 'driver' },
+  '444444': { name: 'Ákos', role: 'driver' },
   '222222': { name: 'Gyuri', role: 'driver' },
   '333333': { name: 'Vasárnapi', role: 'driver' },
 };
