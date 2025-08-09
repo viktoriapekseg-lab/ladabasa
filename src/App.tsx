@@ -37,13 +37,16 @@ export default function App(){
   const crateTypesById = useMemo(()=> Object.fromEntries(crateTypes.map(c=> [c.id,c])), [crateTypes]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 p-3 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         {!user ? <Login onLogin={setUser}/> : (
           <>
-            <header className="flex items-center justify-between">
-              <div><h1 className="text-2xl md:text-3xl font-semibold">Ládanyilvántartó</h1><div className="text-sm text-gray-500">Bejelentkezve: <span className="font-medium">{user.name}</span> ({user.role==='admin'?'Admin':'Sofőr'})</div></div>
-              <div className="flex gap-2">
+            <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-semibold">Ládanyilvántartó</h1>
+                <div className="text-sm text-gray-500">Bejelentkezve: <span className="font-medium">{user.name}</span> ({user.role==='admin'?'Admin':'Sofőr'})</div>
+              </div>
+              <div className="flex gap-2 flex-col sm:flex-row">
                 <button className="btn btn-secondary" onClick={()=> exportCSV(partners, crateTypes, movements)}>Export</button>
                 <button className="btn btn-secondary" onClick={()=> setUser(null)}>Kijelentkezés</button>
               </div>
@@ -61,7 +64,7 @@ export default function App(){
                 ...(user.role==='admin'?[{key:'settings',label:'Beállítások'}]:[]),
               ]} render={(k)=>{
                 switch(k){
-                  case 'movements': return <><MovementEntry user={user} partners={partners} crateTypes={crateTypes} onAdd={async (row)=>{ const res=await addMovement(row as any); if(res.error){ alert(res.error.message); return; } setMovements(s=> [res.data as any, ...s]); }}/><MovementTable user={user} movements={movements} partnersById={partnersById} crateTypesById={crateTypesById} onDelete={async (id)=>{ const r=await deleteMovement(id); if(r.error){ alert(r.error.message); return; } setMovements(s=> s.filter(m=> m.id!==id)); }}/></>;
+                  case 'movements': return <><MovementEntry user={user} partners={partners} crateTypes={crateTypes} onAdd={async (row)=>{ const res=await addMovement(row as any); if(res.error){ alert(res.error.message); return; } setMovements(s=> [res.data as any, ...s]); }}/><MovementTable user={user} movements={movements} partnersById={partnersById} crateTypesById={crateTypesById} onDelete={async (id)=>{ const r=await deleteMovement(id); if(r.error){ alert(r.error.message); return; } setMovements(s=> s.filter(x=> x.id!==id)); }}/></>;
                   case 'balances': return <BalancesTable balances={balances} partnersById={partnersById} crateTypes={crateTypes}/>;
                   case 'partners': return <PartnersCard partners={partners} setPartners={setPartners} />;
                   case 'settings': return <SettingsCard crateTypes={crateTypes} setCrateTypes={setCrateTypes} movements={movements} />;
@@ -83,10 +86,15 @@ function Login({ onLogin }: { onLogin: (u: User)=> void }){
   return <div className="min-h-[60vh] grid place-items-center">
     <div className="card" style={{maxWidth:480,width:'100%'}}>
       <div className="card-header"><div className="card-title">Belépés PIN-kóddal</div></div>
-      <div className="card-content" style={{display:'grid',gap:12}}>
-        <div><label className="label">PIN</label><input className="input" type="password" value={pin} onChange={e=> setPin(e.target.value)} placeholder="PIN megadása"/></div>
+      <div className="card-content grid gap-3">
+        <div>
+          <label className="label">PIN</label>
+          <input className="input" type="password" value={pin} onChange={e=> setPin(e.target.value)} placeholder="PIN megadása"/>
+        </div>
         {err && <div style={{color:'#dc2626', fontSize:12}}>{err}</div>}
-        <div style={{display:'flex',justifyContent:'flex-end'}}><button className="btn" onClick={submit}>Belépés</button></div>
+        <div className="flex justify-end">
+          <button className="btn w-full sm:w-auto" onClick={submit}>Belépés</button>
+        </div>
       </div>
     </div>
   </div>;
@@ -110,7 +118,7 @@ function SetupNeeded(){
 function Tabs({tabs, render}:{tabs:{key:string,label:string}[]; render:(k:string)=>React.ReactNode}){
   const [active,setActive]=useState(tabs[0]?.key ?? 'movements');
   return <div>
-    <div style={{display:'inline-grid',gridAutoFlow:'column',gap:8,background:'#eef2f7',padding:6,borderRadius:8,marginBottom:12}}>
+    <div className="inline-grid grid-flow-col gap-2 bg-[#eef2f7] p-1.5 rounded-lg mb-3">
       {tabs.map(t=> <button key={t.key} className={`btn ${active===t.key?'btn-secondary':''}`} onClick={()=> setActive(t.key)}>{t.label}</button>)}
     </div>
     <div>{render(active)}</div>
@@ -129,10 +137,10 @@ function MovementEntry({ user, partners, crateTypes, onAdd }:{ user: User; partn
   useEffect(()=>{ if(!partnerId && partners[0]) setPartnerId(partners[0].id); }, [partners, partnerId]);
   useEffect(()=>{ if(crateTypeId && !activeCrateTypes.some(c=> c.id===crateTypeId)) setCrateTypeId(''); }, [activeCrateTypes, crateTypeId]);
 
-  return <div className="card" style={{marginBottom:16}}>
+  return <div className="card mb-4">
     <div className="card-header"><div className="card-title">Új mozgás – {user.name}</div></div>
-    <div className="card-content" style={{display:'grid',gap:12,gridTemplateColumns:'repeat(6,minmax(0,1fr))'}}>
-      <div style={{gridColumn:'span 2 / span 2'}}>
+    <div className="card-content grid gap-3 grid-cols-1 md:grid-cols-6">
+      <div className="md:col-span-2">
         <label className="label">Partner</label>
         <select className="select" value={partnerId} onChange={e=> setPartnerId(e.target.value)}>
           <option value="" disabled>Válassz partnert</option>
@@ -161,12 +169,12 @@ function MovementEntry({ user, partners, crateTypes, onAdd }:{ user: User; partn
         <label className="label">Dátum</label>
         <input className="input" type="date" value={date} onChange={e=> setDate(e.target.value)}/>
       </div>
-      <div style={{gridColumn:'1 / -1'}}>
+      <div className="md:col-span-6">
         <label className="label">Megjegyzés</label>
-        <textarea className="textarea" value={note} onChange={e=> setNote(e.target.value)} placeholder="pl. bizonylatszám"/>
+        <textarea className="textarea" rows={3} value={note} onChange={e=> setNote(e.target.value)} placeholder="pl. bizonylatszám"/>
       </div>
-      <div style={{gridColumn:'1 / -1', display:'flex', justifyContent:'flex-end', gap:8}}>
-        <button className="btn" onClick={async ()=>{
+      <div className="md:col-span-6 flex justify-end">
+        <button className="btn w-full md:w-auto" onClick={async ()=>{
           if(!partnerId) return alert('Válassz partnert!'); 
           if(!crateTypeId) return alert('Válassz ládatípust!');
           const v = parseInt(qty,10); 
@@ -184,9 +192,9 @@ function MovementTable({ user, movements, partnersById, crateTypesById, onDelete
   const [filterType, setFilterType] = useState<string>('');
   const filtered = useMemo(()=> movements.filter(m=> movementMatchesFilters(m, filterPartner, filterType, partnersById, crateTypesById)), [movements, filterPartner, filterType, partnersById, crateTypesById]);
   return <div className="card">
-    <div className="card-header" style={{display:'flex',gap:12,alignItems:'center',justifyContent:'space-between',flexWrap:'wrap'}}>
+    <div className="card-header flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="card-title">Rögzített mozgások</div>
-      <div style={{display:'flex',gap:8}}>
+      <div className="flex gap-2 flex-col sm:flex-row w-full sm:w-auto">
         <select className="select" value={filterPartner || SELECT_ALL} onChange={e=> setFilterPartner(e.target.value===SELECT_ALL? '' : e.target.value)}>
           <option value={SELECT_ALL}>(Összes partner)</option>
           {Object.values(partnersById).map(p=> <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -201,17 +209,28 @@ function MovementTable({ user, movements, partnersById, crateTypesById, onDelete
     <div className="card-content">
       <div style={{overflow:'auto'}}>
         <table className="table">
-          <thead><tr><th>Dátum</th><th>Sofőr</th><th>Partner</th><th>Irány</th><th>Típus</th><th>Mennyiség</th><th>Megjegyzés</th><th style={{textAlign:'right'}}>Művelet</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Dátum</th>
+              <th className="hidden sm:table-cell">Sofőr</th>
+              <th>Partner</th>
+              <th>Irány</th>
+              <th>Típus</th>
+              <th>Mennyiség</th>
+              <th className="hidden sm:table-cell">Megjegyzés</th>
+              <th style={{textAlign:'right'}}>Művelet</th>
+            </tr>
+          </thead>
           <tbody>
             {filtered.map(m=> (
               <tr key={m.id}>
                 <td>{m.date}</td>
-                <td>{m.driver_name||'–'}</td>
+                <td className="hidden sm:table-cell">{m.driver_name||'–'}</td>
                 <td>{partnersById[m.partner_id]?.name||'?'}</td>
                 <td>{m.direction==='out'?'Kiadás':'Visszahozatal'}</td>
                 <td>{formatCrateTypeLabel(crateTypesById, m.crate_type_id)}</td>
                 <td>{m.qty}</td>
-                <td title={m.note} style={{maxWidth:380,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.note}</td>
+                <td className="hidden sm:table-cell" title={m.note} style={{maxWidth:380,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.note}</td>
                 <td style={{textAlign:'right'}}>{user.role==='admin' && <button className="btn" onClick={()=> onDelete(m.id)}>Törlés</button>}</td>
               </tr>
             ))}
@@ -240,29 +259,26 @@ function PartnersCard({ partners, setPartners }:{ partners: Partner[]; setPartne
     setPartners(s=> s.filter(p=> p.id!==id));
   };
   return <div className="card">
-    <div className="card-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+    <div className="card-header flex items-center justify-between">
       <div className="card-title">Partnerek</div>
       {!open && <button className="btn" onClick={()=> setOpen(true)}>Új partner</button>}
     </div>
     <div className="card-content">
       {open && <div className="dialog-overlay"><div className="dialog-content">
         <div className="card-title" style={{marginBottom:8}}>Új partner</div>
-        <div style={{display:'grid',gap:10}}>
+        <div className="grid gap-3 grid-cols-1">
           <div><label className="label">Név *</label><input className="input" value={name} onChange={e=> setName(e.target.value)}/></div>
           <div><label className="label">Elérhetőség</label><input className="input" value={contact} onChange={e=> setContact(e.target.value)} placeholder="telefon / email"/></div>
-          <div><label className="label">Megjegyzés</label><textarea className="textarea" value={note} onChange={e=> setNote(e.target.value)}/></div>
+          <div><label className="label">Megjegyzés</label><textarea className="textarea" rows={3} value={note} onChange={e=> setNote(e.target.value)}/></div>
         </div>
-        <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:8}}>
-          <button className="btn btn-secondary" onClick={()=> setOpen(false)}>Mégse</button>
-          <button className="btn" onClick={add}>Mentés</button>
-        </div>
+        <div className="flex justify-end gap-2 mt-2"><button className="btn btn-secondary" onClick={()=> setOpen(false)}>Mégse</button><button className="btn" onClick={add}>Mentés</button></div>
       </div></div>}
 
       <div style={{overflow:'auto', marginTop:16}}>
         <table className="table">
-          <thead><tr><th>Név</th><th>Elérhetőség</th><th>Megjegyzés</th><th style={{textAlign:'right'}}>Művelet</th></tr></thead>
+          <thead><tr><th>Név</th><th className="hidden sm:table-cell">Elérhetőség</th><th className="hidden sm:table-cell">Megjegyzés</th><th style={{textAlign:'right'}}>Művelet</th></tr></thead>
           <tbody>
-            {partners.map(p=> <tr key={p.id}><td>{p.name}</td><td>{p.contact}</td><td title={p.note} style={{maxWidth:380,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.note}</td><td style={{textAlign:'right'}}><button className="btn" onClick={()=> remove(p.id)}>Törlés</button></td></tr>)}
+            {partners.map(p=> <tr key={p.id}><td>{p.name}</td><td className="hidden sm:table-cell">{p.contact}</td><td className="hidden sm:table-cell" title={p.note} style={{maxWidth:380,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.note}</td><td style={{textAlign:'right'}}><button className="btn" onClick={()=> remove(p.id)}>Törlés</button></td></tr>)}
             {partners.length===0 && <tr><td colSpan={4} style={{textAlign:'center',color:'#6b7280',fontSize:13}}>Még nincs partner.</td></tr>}
           </tbody>
         </table>
@@ -295,16 +311,16 @@ function SettingsCard({ crateTypes, setCrateTypes, movements }:{ crateTypes: Cra
   return <div className="card">
     <div className="card-header"><div className="card-title">Ládatípusok</div></div>
     <div className="card-content">
-      <div style={{display:'grid',gap:12,gridTemplateColumns:'repeat(3,minmax(0,1fr))'}}>
+      <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
         <div><label className="label">Azonosító *</label><input className="input" value={id} onChange={e=> setId(e.target.value)} placeholder="pl. M10"/></div>
         <div><label className="label">Megnevezés</label><input className="input" value={label} onChange={e=> setLabel(e.target.value)} placeholder="pl. M10 – kicsi láda"/></div>
-        <div style={{display:'flex',alignItems:'end'}}><button className="btn" onClick={addType}>Hozzáadás</button></div>
+        <div className="flex items-end"><button className="btn w-full md:w-auto" onClick={addType}>Hozzáadás</button></div>
       </div>
       <div style={{overflow:'auto', marginTop:16}}>
         <table className="table">
-          <thead><tr><th>Azonosító</th><th>Megnevezés</th><th>Státusz</th><th style={{textAlign:'right'}}>Művelet</th></tr></thead>
+          <thead><tr><th>Azonosító</th><th className="hidden sm:table-cell">Megnevezés</th><th>Státusz</th><th style={{textAlign:'right'}}>Művelet</th></tr></thead>
           <tbody>
-            {crateTypes.map(c=> <tr key={c.id}><td>{c.id}</td><td>{c.label}</td><td>{c.archived? 'Archivált' : 'Aktív'}</td><td style={{textAlign:'right'}}>
+            {crateTypes.map(c=> <tr key={c.id}><td>{c.id}</td><td className="hidden sm:table-cell">{c.label}</td><td>{c.archived? 'Archivált' : 'Aktív'}</td><td style={{textAlign:'right'}}>
               {c.archived ? <button className="btn btn-secondary" onClick={()=> toggleArchive(c.id, false)}>Visszaállít</button> : <button className="btn btn-secondary" onClick={()=> toggleArchive(c.id, true)}>Archivál</button>}
               <button className="btn" onClick={()=> removeType(c.id)}>Törlés</button>
             </td></tr>)}
@@ -323,9 +339,9 @@ function BalancesTable({ balances, partnersById, crateTypes }:{ balances:Map<str
     <div className="card-content">
       <div style={{overflow:'auto'}}>
         <table className="table">
-          <thead><tr><th>Partner</th>{crateTypes.map(ct=> <th key={ct.id}>{ct.label}</th>)}<th>Összesen</th></tr></thead>
+          <thead><tr><th>Partner</th>{crateTypes.map(ct=> <th key={ct.id} className="hidden md:table-cell">{ct.label}</th>)}<th>Összesen</th></tr></thead>
           <tbody>
-            {rows.map(r=> <tr key={r.partnerId}><td>{r.partnerName}</td>{crateTypes.map(ct=> <td key={ct.id}>{r.sums[ct.id]}</td>)}<td style={{fontWeight:600}}>{r.total}</td></tr>)}
+            {rows.map(r=> <tr key={r.partnerId}><td>{r.partnerName}</td>{crateTypes.map(ct=> <td key={ct.id} className="hidden md:table-cell">{r.sums[ct.id]}</td>)}<td style={{fontWeight:600}}>{r.total}</td></tr>)}
             {rows.length===0 && <tr><td colSpan={crateTypes.length+2} style={{textAlign:'center',color:'#6b7280',fontSize:13}}>Nincs partner / mozgás.</td></tr>}
           </tbody>
         </table>
