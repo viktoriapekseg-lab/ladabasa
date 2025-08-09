@@ -186,7 +186,7 @@ function MovementEntry({ user, partners, crateTypes, onAdd }:{ user: User; partn
       <div>
         <label className="label">Irány</label>
         <select className="select" value={direction} onChange={e=> setDirection(e.target.value as Movement['direction'])}>
-          <option value="out">Kiadás</option>
+          <option value="out">Kiadás(A partnernél marad)</option>
           <option value="in">Visszahozatal</option>
         </select>
       </div>
