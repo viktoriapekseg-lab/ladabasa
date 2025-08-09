@@ -263,7 +263,7 @@ function MovementTable({ user, movements, partnersById, crateTypesById, onDelete
                 <td>{m.date}</td>
                 <td className="hidden sm:table-cell">{m.driver_name||'–'}</td>
                 <td>{partnersById[m.partner_id]?.name||'?'}</td>
-                <td>{m.direction==='out'?'Kiadás':'Visszahozatal'}</td>
+                <td>{m.direction==='out'?'Kiadás (A partnernél marad)':'Visszahozatal'}</td>
                 <td>{formatCrateTypeLabel(crateTypesById, m.crate_type_id)}</td>
                 <td>{m.qty}</td>
                 <td className="hidden sm:table-cell" title={m.note} style={{maxWidth:380,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.note}</td>
