@@ -129,21 +129,44 @@ function Login({ onLogin }: { onLogin: (u: User)=> void }){
   const [pin, setPin] = useState('');
   const [err, setErr] = useState<string|null>(null);
   const submit = ()=> { const u = validatePin(pin.trim()); if(!u){ setErr('Hibás PIN.'); return; } onLogin(u); };
+
   return <div className="min-h-[60vh] grid place-items-center">
     <div className="card" style={{maxWidth:480,width:'100%'}}>
       <div className="card-header"><div className="card-title">Belépés PIN-kóddal</div></div>
       <div className="card-content grid gap-3">
-        <div>
-          <label className="label">PIN</label>
-          <input className="input" type="password" value={pin} onChange={e=> setPin(e.target.value)} placeholder="PIN megadása"/>
-        </div>
-        {err && <div style={{color:'#dc2626', fontSize:12}}>{err}</div>}
-        <div className="flex justify-end">
-          <button className="btn w-full sm:w-auto" onClick={submit}>Belépés</button>
-        </div>
+        {/* MÓDOSULT: űrlap és input attribútumok */}
+        <form
+          autoComplete="off"
+          onSubmit={(e)=>{ e.preventDefault(); submit(); }}
+        >
+          <label className="label" htmlFor="pin">PIN</label>
+          <input
+            id="pin"
+            className="input"
+            /* Tipp: a jelszómentés kerülése érdekében nem "password" a type.
+               Maszkolás webkites böngészőkben: */
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            name="access_code"           /* nem "pin" / "password" */
+            autoComplete="off"           /* + a form is off */
+            autoCapitalize="off"
+            spellCheck={false}
+            value={pin}
+            onChange={e=> setPin(e.target.value)}
+            placeholder="PIN megadása"
+            style={{ WebkitTextSecurity: 'disc' }}
+          />
+          {err && <div style={{color:'#dc2626', fontSize:12, marginTop:8}}>{err}</div>}
+          <div className="flex justify-end" style={{marginTop:12}}>
+            <button className="btn w-full sm:w-auto" type="submit">Belépés</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>;
+}
+
 }
 
 function SetupNeeded(){
