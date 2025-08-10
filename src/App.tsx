@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { envOk, loadAll, addPartner, deletePartner, addCrateType, setCrateTypeArchived, deleteCrateType, addMovement, deleteMovement, type Partner as P, type CrateType as C, type Movement as M } from './lib/db';
 
 type UserRole = 'admin' | 'driver';
 type User = { name: string; role: UserRole };
 const USERS_BY_PIN: Record<string, User> = {
   '0717': { name: 'Admin', role: 'admin' },
-  '444444': { name: 'Ákos', role: 'driver' },
+  '111111': { name: 'Ákos', role: 'driver' },
   '222222': { name: 'Gyuri', role: 'driver' },
   '333333': { name: 'Vasárnapi', role: 'driver' },
 };
@@ -36,16 +36,6 @@ export default function App(){
   const partnersById = useMemo(()=> Object.fromEntries(partners.map(p=> [p.id,p])), [partners]);
   const crateTypesById = useMemo(()=> Object.fromEntries(crateTypes.map(c=> [c.id,c])), [crateTypes]);
 
-  const sections = useMemo(()=>{
-    const arr: { key:string; label:string; render:()=>JSX.Element; adminOnly?:boolean }[] = [
-      { key:'movements', label:'Mozgások', render:()=> <><MovementEntry user={user!} partners={partners} crateTypes={crateTypes} onAdd={async (row)=>{ const res=await addMovement(row as any); if(res.error){ alert(res.error.message); return; } setMovements(s=> [res.data as any, ...s]); }}/><MovementTable user={user!} movements={movements} partnersById={partnersById} crateTypesById={crateTypesById} onDelete={async (id)=>{ const r=await deleteMovement(id); if(r.error){ alert(r.error.message); return; } setMovements(s=> s.filter(x=> x.id!==id)); }}/></> },
-      { key:'balances', label:'Egyenlegek', render:()=> <BalancesTable balances={balances} partnersById={partnersById} crateTypes={crateTypes}/> },
-      { key:'partners', label:'Partnerek', adminOnly:true, render:()=> <PartnersCard partners={partners} setPartners={setPartners} /> },
-      { key:'settings', label:'Beállítások', adminOnly:true, render:()=> <SettingsCard crateTypes={crateTypes} setCrateTypes={setCrateTypes} movements={movements} /> },
-    ];
-    return user?.role==='admin' ? arr : arr.filter(a=> !a.adminOnly);
-  }, [user, partners, crateTypes, movements, balances, partnersById, crateTypesById]);
-
   return (
     <div className="min-h-screen bg-gray-50 p-3 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -67,7 +57,20 @@ export default function App(){
             ) : error ? (
               <div className="card"><div className="card-content" style={{color:'#dc2626'}}>Hiba: {error}</div></div>
             ) : (
-              <ResponsiveSections sections={sections}/>
+              <Tabs tabs={[
+                {key:'movements',label:'Mozgások'},
+                {key:'balances',label:'Egyenlegek'},
+                ...(user.role==='admin'?[{key:'partners',label:'Partnerek'}]:[]),
+                ...(user.role==='admin'?[{key:'settings',label:'Beállítások'}]:[]),
+              ]} render={(k)=>{
+                switch(k){
+                  case 'movements': return <><MovementEntry user={user} partners={partners} crateTypes={crateTypes} onAdd={async (row)=>{ const res=await addMovement(row as any); if(res.error){ alert(res.error.message); return; } setMovements(s=> [res.data as any, ...s]); }}/><MovementTable user={user} movements={movements} partnersById={partnersById} crateTypesById={crateTypesById} onDelete={async (id)=>{ const r=await deleteMovement(id); if(r.error){ alert(r.error.message); return; } setMovements(s=> s.filter(x=> x.id!==id)); }}/></>;
+                  case 'balances': return <BalancesTable balances={balances} partnersById={partnersById} crateTypes={crateTypes}/>;
+                  case 'partners': return <PartnersCard partners={partners} setPartners={setPartners} />;
+                  case 'settings': return <SettingsCard crateTypes={crateTypes} setCrateTypes={setCrateTypes} movements={movements} />;
+                  default: return null;
+                }
+              }}/>
             )}
           </>
         )}
@@ -76,97 +79,25 @@ export default function App(){
   );
 }
 
-function ResponsiveSections({ sections }:{ sections:{key:string;label:string;render:()=>JSX.Element}[] }){
-  const [active, setActive] = useState(0);
-  const scrollerRef = useRef<HTMLDivElement>(null);
-
-  // Desktop: tabs on top
-  // Mobile: carousel with dots + arrows
-  const scrollToIndex = (idx:number)=>{
-    const node = scrollerRef.current;
-    if(!node) return;
-    const child = node.children[idx] as HTMLElement;
-    if(child) node.scrollTo({ left: child.offsetLeft, behavior:'smooth' });
-    setActive(idx);
-  };
-
-  const onScroll = ()=>{
-    const node = scrollerRef.current;
-    if(!node) return;
-    const { scrollLeft, clientWidth } = node;
-    const idx = Math.round(scrollLeft / clientWidth);
-    if(idx !== active) setActive(Math.min(Math.max(idx,0), sections.length-1));
-  };
-
-  return <div className="space-y-3">
-    {/* Desktop tabs */}
-    <div className="hidden md:flex gap-2 bg-[#eef2f7] p-1.5 rounded-lg">
-      {sections.map((s,i)=>(
-        <button key={s.key} className={`btn ${i===active?'btn-secondary':''}`} onClick={()=> scrollToIndex(i)}>{s.label}</button>
-      ))}
-    </div>
-
-    {/* Mobile pager */}
-    <div className="md:hidden flex items-center justify-between">
-      <button className="btn" onClick={()=> scrollToIndex(Math.max(active-1,0))} disabled={active===0}>‹</button>
-      <div className="flex gap-1">
-        {sections.map((s,i)=>(<span key={s.key} aria-label={s.label} className={`h-2 w-2 rounded-full ${i===active?'bg-gray-800':'bg-gray-300'}`}></span>))}
-      </div>
-      <button className="btn" onClick={()=> scrollToIndex(Math.min(active+1,sections.length-1))} disabled={active===sections.length-1}>›</button>
-    </div>
-
-    {/* Scroll-snap carousel */}
-    <div ref={scrollerRef} onScroll={onScroll} className="md:hidden flex overflow-x-auto snap-x snap-mandatory scroll-smooth" style={{scrollBehavior:'smooth'}}>
-      {sections.map((s)=> <section key={s.key} className="carousel-panel shrink-0 px-0" style={{width:'100%'}}>{s.render()}</section>)}
-    </div>
-
-    {/* Desktop content */}
-    <div className="hidden md:block">{sections[active]?.render()}</div>
-  </div>;
-}
-
 function Login({ onLogin }: { onLogin: (u: User)=> void }){
   const [pin, setPin] = useState('');
   const [err, setErr] = useState<string|null>(null);
   const submit = ()=> { const u = validatePin(pin.trim()); if(!u){ setErr('Hibás PIN.'); return; } onLogin(u); };
-
   return <div className="min-h-[60vh] grid place-items-center">
     <div className="card" style={{maxWidth:480,width:'100%'}}>
       <div className="card-header"><div className="card-title">Belépés PIN-kóddal</div></div>
       <div className="card-content grid gap-3">
-        {/* MÓDOSULT: űrlap és input attribútumok */}
-        <form
-          autoComplete="off"
-          onSubmit={(e)=>{ e.preventDefault(); submit(); }}
-        >
-          <label className="label" htmlFor="pin">PIN</label>
-          <input
-            id="pin"
-            className="input"
-            /* Tipp: a jelszómentés kerülése érdekében nem "password" a type.
-               Maszkolás webkites böngészőkben: */
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            name="access_code"           /* nem "pin" / "password" */
-            autoComplete="off"           /* + a form is off */
-            autoCapitalize="off"
-            spellCheck={false}
-            value={pin}
-            onChange={e=> setPin(e.target.value)}
-            placeholder="PIN megadása"
-            style={{ WebkitTextSecurity: 'disc' }}
-          />
-          {err && <div style={{color:'#dc2626', fontSize:12, marginTop:8}}>{err}</div>}
-          <div className="flex justify-end" style={{marginTop:12}}>
-            <button className="btn w-full sm:w-auto" type="submit">Belépés</button>
-          </div>
-        </form>
+        <div>
+          <label className="label">PIN</label>
+          <input className="input" type="password" value={pin} onChange={e=> setPin(e.target.value)} placeholder="PIN megadása"/>
+        </div>
+        {err && <div style={{color:'#dc2626', fontSize:12}}>{err}</div>}
+        <div className="flex justify-end">
+          <button className="btn w-full sm:w-auto" onClick={submit}>Belépés</button>
+        </div>
       </div>
     </div>
   </div>;
-}
-
 }
 
 function SetupNeeded(){
@@ -181,6 +112,16 @@ function SetupNeeded(){
       <p>Táblák létrehozása: lásd a csomagban lévő <code>schema.sql</code>-t.</p>
       <p>Ha kész, frissítsd az oldalt.</p>
     </div>
+  </div>;
+}
+
+function Tabs({tabs, render}:{tabs:{key:string,label:string}[]; render:(k:string)=>React.ReactNode}){
+  const [active,setActive]=useState(tabs[0]?.key ?? 'movements');
+  return <div>
+    <div className="inline-grid grid-flow-col gap-2 bg-[#eef2f7] p-1.5 rounded-lg mb-3">
+      {tabs.map(t=> <button key={t.key} className={`btn ${active===t.key?'btn-secondary':''}`} onClick={()=> setActive(t.key)}>{t.label}</button>)}
+    </div>
+    <div>{render(active)}</div>
   </div>;
 }
 
